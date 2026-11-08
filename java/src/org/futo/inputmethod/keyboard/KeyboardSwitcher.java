@@ -75,7 +75,6 @@ public final class KeyboardSwitcher implements SwitchActions {
 
     private KeyboardLayoutSetV2 mKeyboardLayoutSet;
     private StateHint mStateHint;
-    // TODO: The following {@link KeyboardTextsSet} should be in {@link KeyboardLayoutSet}.
     private final KeyboardTextsSet mKeyboardTextsSet = new KeyboardTextsSet();
 
     private KeyboardTheme mKeyboardTheme;
@@ -88,7 +87,6 @@ public final class KeyboardSwitcher implements SwitchActions {
     }
 
     private KeyboardSwitcher() {
-        // Intentional empty constructor for singleton.
     }
 
     public static void init(final LatinIMELegacy latinImeLegacy) {
@@ -102,9 +100,15 @@ public final class KeyboardSwitcher implements SwitchActions {
         mIsHardwareAcceleratedDrawingEnabled = true;
     }
 
+    // --- YENİ EKLENEN METOT ---
+    public KeyboardState getState() {
+        return mState;
+    }
+    // --- YENİ EKLENEN METOT BİTTİ ---
+
     public void updateKeyboardTheme(@NonNull Context displayContext) {
         final boolean themeUpdated = updateKeyboardThemeAndContextThemeWrapper(
-                displayContext, KeyboardTheme.getKeyboardTheme(displayContext /* context */));
+                displayContext, KeyboardTheme.getKeyboardTheme(displayContext));
         if (themeUpdated && mKeyboardView != null) {
             mLatinIMELegacy.getLatinIME().updateLegacyView(onCreateInputView(
                     displayContext, mIsHardwareAcceleratedDrawingEnabled));
@@ -144,7 +148,6 @@ public final class KeyboardSwitcher implements SwitchActions {
             layoutSetName = overrideLayoutSet;
             multilingualTypingLanguages = null;
         }
-
 
         final KeyboardSizingCalculator sizingCalculator = mLatinIMELegacy.getLatinIME().getSizingCalculator();
         final ComputedKeyboardSize computedSize = sizingCalculator.calculate(layoutSetName, settingsValues);
@@ -223,10 +226,8 @@ public final class KeyboardSwitcher implements SwitchActions {
     private void setKeyboard(
             @Nonnull final KeyboardLayoutElement element,
             @Nonnull final KeyboardSwitchState toggleState) {
-        // Make {@link MainKeyboardView} visible and hide {@link EmojiPalettesView}.
         final SettingsValues currentSettingsValues = Settings.getInstance().getCurrent();
         setMainKeyboardFrame(currentSettingsValues, toggleState);
-        // TODO: pass this object to setKeyboard instead of getting the current values.
         final MainKeyboardView keyboardView = mKeyboardView;
         final Keyboard oldKeyboard = keyboardView.getKeyboard();
         final Keyboard newKeyboard = mKeyboardLayoutSet.getKeyboard(element);
@@ -293,9 +294,6 @@ public final class KeyboardSwitcher implements SwitchActions {
         final int visibility =  isImeSuppressedByHardwareKeyboard(settingsValues, toggleState)
                 ? View.GONE : View.VISIBLE;
         mKeyboardView.setVisibility(visibility);
-        // The visibility of {@link #mKeyboardView} must be aligned with {@link #MainKeyboardFrame}.
-        // @see #getVisibleKeyboardView() and
-        // @see LatinIME#onComputeInset(android.inputmethodservice.InputMethodService.Insets)
         mMainKeyboardFrame.setVisibility(visibility);
     }
 
@@ -340,12 +338,8 @@ public final class KeyboardSwitcher implements SwitchActions {
     }
 
     public void onToggleKeyboard(@Nonnull final KeyboardSwitchState toggleState) {
-        // TODO: only used by EmojiAltPhysicalKeyDetector
     }
 
-    /**
-     * Updates state machine to figure out when to automatically switch back to the previous mode.
-     */
     public void onEvent(final Event event, final int currentAutoCapsState) {
         mState.onEvent(event, transformAutoCapsState(currentAutoCapsState));
     }
@@ -394,7 +388,7 @@ public final class KeyboardSwitcher implements SwitchActions {
         }
 
         updateKeyboardThemeAndContextThemeWrapper(
-                displayContext, KeyboardTheme.getKeyboardTheme(displayContext /* context */));
+                displayContext, KeyboardTheme.getKeyboardTheme(displayContext));
         mCurrentInputView = (InputView)LayoutInflater.from(mThemeContext).inflate(
                 R.layout.input_view, null, false);
         mMainKeyboardFrame = mCurrentInputView.findViewById(R.id.main_keyboard_frame);
