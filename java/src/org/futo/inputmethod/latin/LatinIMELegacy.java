@@ -601,7 +601,8 @@ public class LatinIMELegacy implements KeyboardActionListener,
             final boolean isKeyRepeat) {
         
         // --- YENİ: CTRL / ALT KOMBİNASYON KONTROLÜ ---
-        if (mKeyboardSwitcher.getState().isCtrlActive() || mKeyboardSwitcher.getState().isAltActive()) {
+        if (mKeyboardSwitcher.getState() != null && 
+            (mKeyboardSwitcher.getState().isCtrlActive() || mKeyboardSwitcher.getState().isAltActive())) {
             int metaState = 0;
             if (mKeyboardSwitcher.getState().isCtrlActive()) {
                 metaState |= KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON;
