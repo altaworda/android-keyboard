@@ -14,572 +14,252 @@ import org.futo.inputmethod.latin.BuildConfig
 import org.futo.inputmethod.latin.common.Constants
 import org.futo.inputmethod.v2keyboard.getKeyboardMode
 
-enum class KeyboardLayoutKind {
-    Alphabet0,
-    Alphabet1,
-    Alphabet2,
-    Alphabet3,
-    Symbols,
-    Phone,
-    Number,
-    NumberBasic,
-}
+enum class KeyboardLayoutKind { Alphabet0, Alphabet1, Alphabet2, Alphabet3, Symbols, Phone, Number, NumberBasic }
+val KeyboardLayoutKind.isAlphabet get() = when(this) { KeyboardLayoutKind.Alphabet0 -> true; KeyboardLayoutKind.Alphabet1 -> true; KeyboardLayoutKind.Alphabet2 -> true; KeyboardLayoutKind.Alphabet3 -> true; else -> false }
+fun KeyboardLayoutKind.toAlphaKind(): Int? = when(this) { KeyboardLayoutKind.Alphabet0 -> 0; KeyboardLayoutKind.Alphabet1 -> 1; KeyboardLayoutKind.Alphabet2 -> 2; KeyboardLayoutKind.Alphabet3 -> 3; else -> null }
+fun fromAlphaKind(int: Int): KeyboardLayoutKind? = when(int) { 0 -> KeyboardLayoutKind.Alphabet0; 1 -> KeyboardLayoutKind.Alphabet1; 2 -> KeyboardLayoutKind.Alphabet2; 3 -> KeyboardLayoutKind.Alphabet3; else -> null }
+fun KeyboardLayoutKind.normalize() = when(this) { KeyboardLayoutKind.Alphabet1, KeyboardLayoutKind.Alphabet2, KeyboardLayoutKind.Alphabet3 -> KeyboardLayoutKind.Alphabet0; else -> this }
 
-val KeyboardLayoutKind.isAlphabet get() = when(this) {
-    KeyboardLayoutKind.Alphabet0 -> true
-    KeyboardLayoutKind.Alphabet1 -> true
-    KeyboardLayoutKind.Alphabet2 -> true
-    KeyboardLayoutKind.Alphabet3 -> true
-    else -> false
-}
+enum class KeyboardLayoutPage(val locked: Boolean, val altIdx: Int? = null) { Base(true), Shifted(false), ManuallyShifted(false), ShiftLocked(true), Alt0(false, 0), Alt1(false, 1), Alt2(false, 2), Alt3(false, 3) }
+fun KeyboardLayoutPage.normalize(): KeyboardLayoutPage = when(this) { KeyboardLayoutPage.ManuallyShifted -> KeyboardLayoutPage.Shifted; KeyboardLayoutPage.ShiftLocked -> KeyboardLayoutPage.Shifted; else -> this }
 
-fun KeyboardLayoutKind.toAlphaKind(): Int? = when(this) {
-    KeyboardLayoutKind.Alphabet0 -> 0
-    KeyboardLayoutKind.Alphabet1 -> 1
-    KeyboardLayoutKind.Alphabet2 -> 2
-    KeyboardLayoutKind.Alphabet3 -> 3
-    else -> null
-}
-
-fun fromAlphaKind(int: Int): KeyboardLayoutKind? = when(int) {
-    0 -> KeyboardLayoutKind.Alphabet0
-    1 -> KeyboardLayoutKind.Alphabet1
-    2 -> KeyboardLayoutKind.Alphabet2
-    3 -> KeyboardLayoutKind.Alphabet3
-    else -> null
-}
-
-fun KeyboardLayoutKind.normalize() = when(this) {
-    KeyboardLayoutKind.Alphabet1, KeyboardLayoutKind.Alphabet2, KeyboardLayoutKind.Alphabet3 ->
-        KeyboardLayoutKind.Alphabet0
-    else -> this
-}
-
-enum class KeyboardLayoutPage(val locked: Boolean, val altIdx: Int? = null) {
-    Base(true),
-    Shifted(false),
-    ManuallyShifted(false),
-    ShiftLocked(true),
-    Alt0(false, 0),
-    Alt1(false, 1),
-    Alt2(false, 2),
-    Alt3(false, 3),
-}
-
-/** Normalizes to the base page (for shifted variationsu) */
-fun KeyboardLayoutPage.normalize(): KeyboardLayoutPage =
-    when(this) {
-        KeyboardLayoutPage.ManuallyShifted -> KeyboardLayoutPage.Shifted
-        KeyboardLayoutPage.ShiftLocked -> KeyboardLayoutPage.Shifted
-        else -> this
-    }
-
-data class KeyboardLayoutElement(
-    val kind: KeyboardLayoutKind,
-    val page: KeyboardLayoutPage
-) {
-    fun normalize(): KeyboardLayoutElement =
-        this.copy(kind = kind.normalize(), page = page.normalize())
-
-    val elementId: Int
-        get() = when(kind) {
-            KeyboardLayoutKind.Symbols -> when(page) {
-                KeyboardLayoutPage.Base -> KeyboardId.ELEMENT_SYMBOLS
-                KeyboardLayoutPage.Shifted,
-                KeyboardLayoutPage.ManuallyShifted,
-                KeyboardLayoutPage.ShiftLocked -> KeyboardId.ELEMENT_SYMBOLS_SHIFTED
-                else -> KeyboardId.ELEMENT_SYMBOLS
-            }
-
-            KeyboardLayoutKind.Phone -> when(page) {
-                KeyboardLayoutPage.Base -> KeyboardId.ELEMENT_PHONE
-                KeyboardLayoutPage.Shifted,
-                KeyboardLayoutPage.ManuallyShifted,
-                KeyboardLayoutPage.ShiftLocked -> KeyboardId.ELEMENT_PHONE_SYMBOLS
-                else -> KeyboardId.ELEMENT_PHONE
-            }
-
-            KeyboardLayoutKind.Number, KeyboardLayoutKind.NumberBasic -> KeyboardId.ELEMENT_NUMBER
-
-            KeyboardLayoutKind.Alphabet0,
-            KeyboardLayoutKind.Alphabet1,
-            KeyboardLayoutKind.Alphabet2,
-            KeyboardLayoutKind.Alphabet3 -> when(page) {
-                KeyboardLayoutPage.Base -> KeyboardId.ELEMENT_ALPHABET
-                KeyboardLayoutPage.Shifted -> KeyboardId.ELEMENT_ALPHABET_AUTOMATIC_SHIFTED
-                KeyboardLayoutPage.ManuallyShifted -> KeyboardId.ELEMENT_ALPHABET_MANUAL_SHIFTED
-                KeyboardLayoutPage.ShiftLocked -> KeyboardId.ELEMENT_ALPHABET_SHIFT_LOCK_SHIFTED
-                else -> KeyboardId.ELEMENT_ALPHABET
-            }
+data class KeyboardLayoutElement(val kind: KeyboardLayoutKind, val page: KeyboardLayoutPage) {
+    fun normalize(): KeyboardLayoutElement = this.copy(kind = kind.normalize(), page = page.normalize())
+    val elementId: Int get() = when(kind) {
+        KeyboardLayoutKind.Symbols -> when(page) { KeyboardLayoutPage.Base -> KeyboardId.ELEMENT_SYMBOLS; KeyboardLayoutPage.Shifted, KeyboardLayoutPage.ManuallyShifted, KeyboardLayoutPage.ShiftLocked -> KeyboardId.ELEMENT_SYMBOLS_SHIFTED; else -> KeyboardId.ELEMENT_SYMBOLS }
+        KeyboardLayoutKind.Phone -> when(page) { KeyboardLayoutPage.Base -> KeyboardId.ELEMENT_PHONE; KeyboardLayoutPage.Shifted, KeyboardLayoutPage.ManuallyShifted, KeyboardLayoutPage.ShiftLocked -> KeyboardId.ELEMENT_PHONE_SYMBOLS; else -> KeyboardId.ELEMENT_PHONE }
+        KeyboardLayoutKind.Number, KeyboardLayoutKind.NumberBasic -> KeyboardId.ELEMENT_NUMBER
+        KeyboardLayoutKind.Alphabet0, KeyboardLayoutKind.Alphabet1, KeyboardLayoutKind.Alphabet2, KeyboardLayoutKind.Alphabet3 -> when(page) {
+            KeyboardLayoutPage.Base -> KeyboardId.ELEMENT_ALPHABET
+            KeyboardLayoutPage.Shifted -> KeyboardId.ELEMENT_ALPHABET_AUTOMATIC_SHIFTED
+            KeyboardLayoutPage.ManuallyShifted -> KeyboardId.ELEMENT_ALPHABET_MANUAL_SHIFTED
+            KeyboardLayoutPage.ShiftLocked -> KeyboardId.ELEMENT_ALPHABET_SHIFT_LOCK_SHIFTED
+            else -> KeyboardId.ELEMENT_ALPHABET
         }
-
+    }
     companion object {
-        @JvmStatic
-        @VisibleForTesting
-        fun fromElementId(value: Int): KeyboardLayoutElement =
-            when(value) {
-                KeyboardId.ELEMENT_ALPHABET                    -> KeyboardLayoutElement(kind = KeyboardLayoutKind.Alphabet0, page = KeyboardLayoutPage.Base)
-                KeyboardId.ELEMENT_ALPHABET_MANUAL_SHIFTED     -> KeyboardLayoutElement(kind = KeyboardLayoutKind.Alphabet0, page = KeyboardLayoutPage.ManuallyShifted)
-                KeyboardId.ELEMENT_ALPHABET_AUTOMATIC_SHIFTED  -> KeyboardLayoutElement(kind = KeyboardLayoutKind.Alphabet0, page = KeyboardLayoutPage.Shifted)
-                KeyboardId.ELEMENT_ALPHABET_SHIFT_LOCKED       -> KeyboardLayoutElement(kind = KeyboardLayoutKind.Alphabet0, page = KeyboardLayoutPage.ShiftLocked)
-                KeyboardId.ELEMENT_ALPHABET_SHIFT_LOCK_SHIFTED -> KeyboardLayoutElement(kind = KeyboardLayoutKind.Alphabet0, page = KeyboardLayoutPage.ShiftLocked)
-                KeyboardId.ELEMENT_SYMBOLS                     -> KeyboardLayoutElement(kind = KeyboardLayoutKind.Symbols, page = KeyboardLayoutPage.Base)
-                KeyboardId.ELEMENT_SYMBOLS_SHIFTED             -> KeyboardLayoutElement(kind = KeyboardLayoutKind.Symbols, page = KeyboardLayoutPage.Shifted)
-                KeyboardId.ELEMENT_PHONE                       -> KeyboardLayoutElement(kind = KeyboardLayoutKind.Phone, page = KeyboardLayoutPage.Base)
-                KeyboardId.ELEMENT_PHONE_SYMBOLS               -> KeyboardLayoutElement(kind = KeyboardLayoutKind.Phone, page = KeyboardLayoutPage.Shifted)
-                KeyboardId.ELEMENT_NUMBER                      -> KeyboardLayoutElement(kind = KeyboardLayoutKind.NumberBasic, page = KeyboardLayoutPage.Base)
-                else -> throw IllegalArgumentException("Invalid elementId $value")
-            }
-    }
-}
-
-interface SwitchActions {
-    fun setKeyboard(element: KeyboardLayoutElement)
-    fun requestUpdatingShiftState(autoCapsFlags: Int)
-}
-
-internal data class SavedKeyboardState(
-    val isValid: Boolean = false,
-    val layout: KeyboardLayoutElement = KeyboardLayoutElement(
-        KeyboardLayoutKind.Alphabet0,
-        KeyboardLayoutPage.Base
-    ),
-    val prefersNumberLayout: Boolean = false,
-    val preferredAlphabetKind: Pair<String, Int> = "" to 0
-) {
-    override fun toString(): String {
-        if (!isValid) {
-            return "INVALID"
+        @JvmStatic @VisibleForTesting
+        fun fromElementId(value: Int): KeyboardLayoutElement = when(value) {
+            KeyboardId.ELEMENT_ALPHABET -> KeyboardLayoutElement(KeyboardLayoutKind.Alphabet0, KeyboardLayoutPage.Base)
+            KeyboardId.ELEMENT_ALPHABET_MANUAL_SHIFTED -> KeyboardLayoutElement(KeyboardLayoutKind.Alphabet0, KeyboardLayoutPage.ManuallyShifted)
+            KeyboardId.ELEMENT_ALPHABET_AUTOMATIC_SHIFTED -> KeyboardLayoutElement(KeyboardLayoutKind.Alphabet0, KeyboardLayoutPage.Shifted)
+            KeyboardId.ELEMENT_ALPHABET_SHIFT_LOCKED -> KeyboardLayoutElement(KeyboardLayoutKind.Alphabet0, KeyboardLayoutPage.ShiftLocked)
+            KeyboardId.ELEMENT_ALPHABET_SHIFT_LOCK_SHIFTED -> KeyboardLayoutElement(KeyboardLayoutKind.Alphabet0, KeyboardLayoutPage.ShiftLocked)
+            KeyboardId.ELEMENT_SYMBOLS -> KeyboardLayoutElement(KeyboardLayoutKind.Symbols, KeyboardLayoutPage.Base)
+            KeyboardId.ELEMENT_SYMBOLS_SHIFTED -> KeyboardLayoutElement(KeyboardLayoutKind.Symbols, KeyboardLayoutPage.Shifted)
+            KeyboardId.ELEMENT_PHONE -> KeyboardLayoutElement(KeyboardLayoutKind.Phone, KeyboardLayoutPage.Base)
+            KeyboardId.ELEMENT_PHONE_SYMBOLS -> KeyboardLayoutElement(KeyboardLayoutKind.Phone, KeyboardLayoutPage.Shifted)
+            KeyboardId.ELEMENT_NUMBER -> KeyboardLayoutElement(KeyboardLayoutKind.NumberBasic, KeyboardLayoutPage.Base)
+            else -> throw IllegalArgumentException("Invalid elementId $value")
         }
-        return "${layout.kind.name}${layout.page.name}"
     }
 }
 
-/**
- * Keyboard state machine.
- *
- * This class contains all keyboard state transition logic.
- *
- * The input events are [.onLoadKeyboard], [.onSaveKeyboardState],
- * [.onPressKey], [.onReleaseKey],
- * [.onEvent], [.onFinishSlidingInput],
- * [.onUpdateShiftState], [.onResetKeyboardStateToAlphabet].
- *
- * The actions are [SwitchActions]'s methods.
- */
+interface SwitchActions { fun setKeyboard(element: KeyboardLayoutElement); fun requestUpdatingShiftState(autoCapsFlags: Int) }
+
+internal data class SavedKeyboardState(val isValid: Boolean = false, val layout: KeyboardLayoutElement = KeyboardLayoutElement(KeyboardLayoutKind.Alphabet0, KeyboardLayoutPage.Base), val prefersNumberLayout: Boolean = false, val preferredAlphabetKind: Pair<String, Int> = "" to 0) {
+    override fun toString(): String { if (!isValid) return "INVALID"; return "${layout.kind.name}${layout.page.name}" }
+}
+
 class KeyboardState(private val switchActions: SwitchActions) {
     companion object {
         private const val TAG = "KeyboardState"
         private val DEBUG_EVENT = BuildConfig.DEBUG
-        private const val DEBUG_INTERNAL_ACTION = false
-
-        @JvmStatic
-        fun shouldReleaseAllPointers(keyboard: Keyboard?, key: Key?): Boolean = when {
-            keyboard == null || key == null -> false
-            key.isModifier -> true
-            else -> false
-        }
+        @JvmStatic fun shouldReleaseAllPointers(keyboard: Keyboard?, key: Key?): Boolean = when { keyboard == null || key == null -> false; key.isModifier -> true; else -> false }
     }
 
     private val shiftKeyState = ShiftKeyState("Shift")
     private val symbolKeyState = ModifierKeyState("Symbol")
+    private val ctrlKeyState = CtrlKeyState()
+    private val altKeyState = AltKeyState()
+
+    fun isCtrlActive(): Boolean = ctrlKeyState.isPressing() || ctrlKeyState.isChording() || ctrlKeyState.isLocked
+    fun isAltActive(): Boolean = altKeyState.isPressing() || altKeyState.isChording() || altKeyState.isLocked
+    fun isCtrlLocked(): Boolean = ctrlKeyState.isLocked
+    fun isAltLocked(): Boolean = altKeyState.isLocked
 
     private val alphabetShiftState = AlphabetShiftState()
     private var savedKeyboardState = SavedKeyboardState()
-
-    private var currentLayout = KeyboardLayoutElement(
-        kind = KeyboardLayoutKind.Alphabet0,
-        page = KeyboardLayoutPage.Base
-    )
-
-    private val isAlphabet: Boolean
-        get() = currentLayout.kind.isAlphabet
-
+    private var currentLayout = KeyboardLayoutElement(KeyboardLayoutKind.Alphabet0, KeyboardLayoutPage.Base)
+    private val isAlphabet: Boolean get() = currentLayout.kind.isAlphabet
     private var prefersNumberLayout = false
     private var currentLayoutSet = ""
     private var currentStateHint = DefaultStateHint
     private var preferredAlphabetKind: Pair<String, Int> = "" to 0
+    private val debugState: String get() = "Layout $currentLayout, alphabetShiftState: $alphabetShiftState, shiftKeyState $shiftKeyState, symbolKeyState $symbolKeyState"
 
-    private val debugState: String
-        get() = "Layout $currentLayout, alphabetShiftState: $alphabetShiftState, shiftKeyState $shiftKeyState, symbolKeyState $symbolKeyState"
-
-    private fun setLayout(layout: KeyboardLayoutElement) {
-        currentLayout = layout
-        switchActions.setKeyboard(layout)
-    }
-
-    private fun setNumberLayout(prefer: Boolean = true) {
-        if(prefer) prefersNumberLayout = true
-
-        setLayout(KeyboardLayoutElement(
-            kind = KeyboardLayoutKind.Number,
-            page = KeyboardLayoutPage.Base
-        ))
-    }
-
+    private fun setLayout(layout: KeyboardLayoutElement) { currentLayout = layout; switchActions.setKeyboard(layout) }
+    private fun setNumberLayout(prefer: Boolean = true) { if(prefer) prefersNumberLayout = true; setLayout(KeyboardLayoutElement(KeyboardLayoutKind.Number, KeyboardLayoutPage.Base)) }
     private fun setSymbolLayout() {
-        if(currentLayout.kind == KeyboardLayoutKind.Number || !prefersNumberLayout) {
-            prefersNumberLayout = false
-
-            setLayout(
-                KeyboardLayoutElement(
-                    kind = KeyboardLayoutKind.Symbols,
-                    page = KeyboardLayoutPage.Base
-                )
-            )
-        } else {
-            setLayout(KeyboardLayoutElement(
-                kind = KeyboardLayoutKind.Number,
-                page = KeyboardLayoutPage.Base
-            ))
-        }
+        if(currentLayout.kind == KeyboardLayoutKind.Number || !prefersNumberLayout) { prefersNumberLayout = false; setLayout(KeyboardLayoutElement(KeyboardLayoutKind.Symbols, KeyboardLayoutPage.Base)) }
+        else { setLayout(KeyboardLayoutElement(KeyboardLayoutKind.Number, KeyboardLayoutPage.Base)) }
     }
-
-    private fun setPhoneLayout() {
-        setLayout(KeyboardLayoutElement(
-            kind = KeyboardLayoutKind.Phone,
-            page = KeyboardLayoutPage.Base
-        ))
-    }
-
-    private fun setNumberBasicLayout() {
-        setLayout(KeyboardLayoutElement(
-            kind = KeyboardLayoutKind.NumberBasic,
-            page = KeyboardLayoutPage.Base
-        ))
-    }
-
+    private fun setPhoneLayout() { setLayout(KeyboardLayoutElement(KeyboardLayoutKind.Phone, KeyboardLayoutPage.Base)) }
+    private fun setNumberBasicLayout() { setLayout(KeyboardLayoutElement(KeyboardLayoutKind.NumberBasic, KeyboardLayoutPage.Base)) }
     private fun setAlphabetLayout(autoCapsFlags: Int) {
-        val page = when {
-            alphabetShiftState.isShiftLocked -> KeyboardLayoutPage.ShiftLocked
-            alphabetShiftState.isManualShifted -> KeyboardLayoutPage.ManuallyShifted
-            else -> KeyboardLayoutPage.Base
-        }
-
-        val alphabetKind = if(preferredAlphabetKind.first == currentLayoutSet) {
-            preferredAlphabetKind.second
-        } else {
-            preferredAlphabetKind = currentLayoutSet to 0
-            0
-        }
-
-        setLayout(KeyboardLayoutElement(
-            kind = fromAlphaKind(alphabetKind) ?: KeyboardLayoutKind.Alphabet0,
-            page = page
-        ))
-
+        val page = when { alphabetShiftState.isShiftLocked -> KeyboardLayoutPage.ShiftLocked; alphabetShiftState.isManualShifted -> KeyboardLayoutPage.ManuallyShifted; else -> KeyboardLayoutPage.Base }
+        val alphabetKind = if(preferredAlphabetKind.first == currentLayoutSet) preferredAlphabetKind.second else { preferredAlphabetKind = currentLayoutSet to 0; 0 }
+        setLayout(KeyboardLayoutElement(fromAlphaKind(alphabetKind) ?: KeyboardLayoutKind.Alphabet0, page))
         switchActions.requestUpdatingShiftState(autoCapsFlags)
     }
 
     fun onLoadKeyboard(editorInfo: EditorInfo?, autoCapsFlags: Int, layoutSetName: String?, stateHint: StateHint?) {
-        // Reset alphabet shift state.
         alphabetShiftState.isShiftLocked = false
-
         if(layoutSetName != null) currentLayoutSet = layoutSetName
         if(stateHint != null) currentStateHint = stateHint
-
-        shiftKeyState.onRelease()
-        symbolKeyState.onRelease()
-
+        shiftKeyState.onRelease(); symbolKeyState.onRelease(); ctrlKeyState.onRelease(); altKeyState.onRelease()
         when(getKeyboardMode(editorInfo ?: EditorInfo())) {
-            KeyboardId.MODE_NUMBER, KeyboardId.MODE_DATE, KeyboardId.MODE_TIME, KeyboardId.MODE_DATETIME ->
-                setNumberBasicLayout()
-
-            KeyboardId.MODE_PHONE ->
-                setPhoneLayout()
-
-            else ->
-                if (savedKeyboardState.isValid) {
-                    onRestoreKeyboardState(autoCapsFlags)
-                } else {
-                    setAlphabetLayout(autoCapsFlags)
-                }
+            KeyboardId.MODE_NUMBER, KeyboardId.MODE_DATE, KeyboardId.MODE_TIME, KeyboardId.MODE_DATETIME -> setNumberBasicLayout()
+            KeyboardId.MODE_PHONE -> setPhoneLayout()
+            else -> if (savedKeyboardState.isValid) onRestoreKeyboardState(autoCapsFlags) else setAlphabetLayout(autoCapsFlags)
         }
-
         savedKeyboardState = SavedKeyboardState(isValid = false)
     }
 
     fun onSaveKeyboardState() {
-        savedKeyboardState = SavedKeyboardState(
-            isValid = true,
-            layout = currentLayout,
-            prefersNumberLayout = prefersNumberLayout,
-            preferredAlphabetKind = preferredAlphabetKind
-        )
-
-        if (DEBUG_EVENT) {
-            Log.d(TAG, "onSaveKeyboardState: saved=$savedKeyboardState $debugState")
-        }
+        savedKeyboardState = SavedKeyboardState(isValid = true, layout = currentLayout, prefersNumberLayout = prefersNumberLayout, preferredAlphabetKind = preferredAlphabetKind)
+        if (DEBUG_EVENT) Log.d(TAG, "onSaveKeyboardState: saved=$savedKeyboardState $debugState")
     }
 
     private fun onRestoreKeyboardState(autoCapsFlags: Int) {
         val state = savedKeyboardState
-
         setLayout(state.layout)
         prefersNumberLayout = state.prefersNumberLayout
         switchActions.requestUpdatingShiftState(autoCapsFlags)
     }
 
-    val shifted: Boolean
-        get() = currentLayout.page == KeyboardLayoutPage.Shifted ||
-                currentLayout.page == KeyboardLayoutPage.ManuallyShifted ||
-                currentLayout.page == KeyboardLayoutPage.ShiftLocked
+    val shifted: Boolean get() = currentLayout.page == KeyboardLayoutPage.Shifted || currentLayout.page == KeyboardLayoutPage.ManuallyShifted || currentLayout.page == KeyboardLayoutPage.ShiftLocked
     private fun toggleShift(to: Boolean = !shifted, manually: Boolean = false) {
         setLayout(currentLayout.copy(page = when {
-            to -> {
-                if(isAlphabet) alphabetShiftState.setShifted(true)
-
-                if(manually) {
-                    KeyboardLayoutPage.ManuallyShifted
-                } else {
-                    KeyboardLayoutPage.Shifted
-                }
-            }
-
-            else -> {
-                if(isAlphabet) alphabetShiftState.setShifted(false)
-                KeyboardLayoutPage.Base
-            }
+            to -> { if(isAlphabet) alphabetShiftState.setShifted(true); if(manually) KeyboardLayoutPage.ManuallyShifted else KeyboardLayoutPage.Shifted }
+            else -> { if(isAlphabet) alphabetShiftState.setShifted(false); KeyboardLayoutPage.Base }
         }))
-
-        if(isAlphabet) {
-            alphabetShiftState.isShiftLocked = currentLayout.page == KeyboardLayoutPage.ShiftLocked
-        }
+        if(isAlphabet) alphabetShiftState.isShiftLocked = currentLayout.page == KeyboardLayoutPage.ShiftLocked
     }
-
-    private fun lockShift() {
-        if(!isAlphabet) return
-
-        alphabetShiftState.isShiftLocked = !alphabetShiftState.isShiftLocked
-        if(alphabetShiftState.isShiftLocked) {
-            setLayout(currentLayout.copy(page = KeyboardLayoutPage.ShiftLocked))
-        }
-    }
+    private fun lockShift() { if(!isAlphabet) return; alphabetShiftState.isShiftLocked = !alphabetShiftState.isShiftLocked; if(alphabetShiftState.isShiftLocked) setLayout(currentLayout.copy(page = KeyboardLayoutPage.ShiftLocked)) }
 
     private var shiftTime: Long? = null
     private fun onShiftTapForShiftLockTimer() {
         if(!isAlphabet) return onCancelShiftTimer()
-
         val shiftTimeout = ViewConfiguration.getDoubleTapTimeout()
-
         val currentTime = System.currentTimeMillis()
-        if(shiftTime == null || (currentTime > shiftTime!! + shiftTimeout)) {
-            shiftTime = System.currentTimeMillis()
-        } else {
-            lockShift()
-            onCancelShiftTimer()
-        }
+        if(shiftTime == null || (currentTime > shiftTime!! + shiftTimeout)) shiftTime = System.currentTimeMillis()
+        else { lockShift(); onCancelShiftTimer() }
     }
-    private fun onCancelShiftTimer() {
-        shiftTime = null
-    }
+    private fun onCancelShiftTimer() { shiftTime = null }
 
     fun onPressKey(code: Int, isSinglePointer: Boolean, autoCapsFlags: Int) {
-        if (DEBUG_EVENT) {
-            Log.d(
-                TAG, "onPressKey: code=${Constants.printableCode(code)} flags($autoCapsFlags) single=$isSinglePointer state=$debugState"
-            )
-        }
-
-        if (code != Constants.CODE_SHIFT) {
-            // cancel shift double tap timer
-            onCancelShiftTimer()
-        }
-
-        if(currentStateHint.unshiftOnPressed && isAlphabet && code > 0) {
-            setAlphabetLayout(0)
-        }
-
+        if (DEBUG_EVENT) Log.d(TAG, "onPressKey: code=${Constants.printableCode(code)} flags($autoCapsFlags) single=$isSinglePointer state=$debugState")
+        if (code != Constants.CODE_SHIFT) onCancelShiftTimer()
+        if(currentStateHint.unshiftOnPressed && isAlphabet && code > 0) setAlphabetLayout(0)
         when (code) {
-            Constants.CODE_SHIFT -> {
-                shiftKeyState.onPress()
-                toggleShift(manually = true)
-                onShiftTapForShiftLockTimer()
-            }
-            Constants.CODE_CAPSLOCK -> {
-                // only in onReleaseKey?
-            }
-            Constants.CODE_SWITCH_ALPHA_SYMBOL -> {
-                symbolKeyState.onPress()
-                if(currentLayout.kind == KeyboardLayoutKind.Symbols
-                    || currentLayout.kind == KeyboardLayoutKind.Number) {
-                    setAlphabetLayout(autoCapsFlags)
-                } else {
-                    setSymbolLayout()
-                }
-            }
-            else -> {
-                shiftKeyState.onOtherKeyPressed()
-                symbolKeyState.onOtherKeyPressed()
-            }
+            Constants.CODE_SHIFT -> { shiftKeyState.onPress(); toggleShift(manually = true); onShiftTapForShiftLockTimer() }
+            Constants.CODE_CAPSLOCK -> { }
+            113 -> { ctrlKeyState.onPress(); ctrlKeyState.onTapForLock(); switchActions.setKeyboard(currentLayout) }
+            57 -> { altKeyState.onPress(); altKeyState.onTapForLock(); switchActions.setKeyboard(currentLayout) }
+            Constants.CODE_SWITCH_ALPHA_SYMBOL -> { symbolKeyState.onPress(); if(currentLayout.kind == KeyboardLayoutKind.Symbols || currentLayout.kind == KeyboardLayoutKind.Number) setAlphabetLayout(autoCapsFlags) else setSymbolLayout() }
+            else -> { shiftKeyState.onOtherKeyPressed(); symbolKeyState.onOtherKeyPressed(); ctrlKeyState.onOtherKeyPressed(); altKeyState.onOtherKeyPressed() }
         }
     }
 
     private fun finalizeChord(autoCapsFlags: Int) {
-        when {
-            shiftKeyState.isChording && shifted -> toggleShift(false)
-            symbolKeyState.isChording && !isAlphabet -> setAlphabetLayout(autoCapsFlags)
-            symbolKeyState.isChording && isAlphabet -> setSymbolLayout()
-        }
+        when { shiftKeyState.isChording && shifted -> toggleShift(false); symbolKeyState.isChording && !isAlphabet -> setAlphabetLayout(autoCapsFlags); symbolKeyState.isChording && isAlphabet -> setSymbolLayout() }
     }
 
     fun onReleaseKey(code: Int, withSliding: Boolean, autoCapsFlags: Int) {
-        if (DEBUG_EVENT) {
-            Log.d(
-                TAG, "onReleaseKey: code=${Constants.printableCode(code)} flags($autoCapsFlags) sliding=$withSliding state=$debugState"
-            )
-        }
+        if (DEBUG_EVENT) Log.d(TAG, "onReleaseKey: code=${Constants.printableCode(code)} flags($autoCapsFlags) sliding=$withSliding state=$debugState")
         when (code) {
-            Constants.CODE_SHIFT -> {
-                finalizeChord(autoCapsFlags)
-                if(!withSliding)
-                    shiftKeyState.onRelease()
-            }
-            Constants.CODE_CAPSLOCK -> {
-                lockShift()
-            }
-            Constants.CODE_SWITCH_ALPHA_SYMBOL -> {
-                finalizeChord(autoCapsFlags)
-                if(!withSliding)
-                    symbolKeyState.onRelease()
-            }
-
-            // Return back to main layout if on symbols, and space or enter was pressed
-            Constants.CODE_SPACE, Constants.CODE_ENTER -> {
-                if(symbolKeyState.isReleasing
-                    && currentLayout.page == KeyboardLayoutPage.Base
-                    && currentLayout.kind == KeyboardLayoutKind.Symbols
-                ) {
-                    setAlphabetLayout(autoCapsFlags)
-                }
-            }
-            else -> {
-
-            }
+            Constants.CODE_SHIFT -> { finalizeChord(autoCapsFlags); if(!withSliding) shiftKeyState.onRelease() }
+            Constants.CODE_CAPSLOCK -> { lockShift() }
+            113 -> { if(!withSliding) ctrlKeyState.onRelease(); switchActions.setKeyboard(currentLayout) }
+            57 -> { if(!withSliding) altKeyState.onRelease(); switchActions.setKeyboard(currentLayout) }
+            Constants.CODE_SWITCH_ALPHA_SYMBOL -> { finalizeChord(autoCapsFlags); if(!withSliding) symbolKeyState.onRelease() }
+            Constants.CODE_SPACE, Constants.CODE_ENTER -> { if(symbolKeyState.isReleasing && currentLayout.page == KeyboardLayoutPage.Base && currentLayout.kind == KeyboardLayoutKind.Symbols) setAlphabetLayout(autoCapsFlags) }
+            else -> { }
         }
     }
 
-    fun onUpdateShiftState(autoCapsFlags: Int) {
-        if (DEBUG_EVENT) {
-            Log.d(TAG, "onUpdateShiftState($autoCapsFlags): $debugState")
-        }
-        updateAlphabetShiftState(autoCapsFlags)
+    fun onUpdateShiftState(autoCapsFlags: Int) { if (DEBUG_EVENT) Log.d(TAG, "onUpdateShiftState($autoCapsFlags): $debugState"); updateAlphabetShiftState(autoCapsFlags) }
+    fun onResetKeyboardStateToAlphabet(editorInfo: EditorInfo?, autoCapsFlags: Int) {
+        if (DEBUG_EVENT) Log.d(TAG, "onResetKeyboardStateToAlphabet: $debugState")
+        when(getKeyboardMode(editorInfo ?: EditorInfo())) { KeyboardId.MODE_NUMBER, KeyboardId.MODE_PHONE, KeyboardId.MODE_DATE, KeyboardId.MODE_TIME, KeyboardId.MODE_DATETIME -> onLoadKeyboard(editorInfo, autoCapsFlags, currentLayoutSet, currentStateHint); else -> setAlphabetLayout(autoCapsFlags) }
     }
-
-    fun onResetKeyboardStateToAlphabet(
-        editorInfo: EditorInfo?,
-        autoCapsFlags: Int
-    ) {
-        if (DEBUG_EVENT) {
-            Log.d(
-                TAG, "onResetKeyboardStateToAlphabet: $debugState"
-            )
-        }
-        when(getKeyboardMode(editorInfo ?: EditorInfo())) {
-            KeyboardId.MODE_NUMBER, KeyboardId.MODE_PHONE,
-            KeyboardId.MODE_DATE, KeyboardId.MODE_TIME,
-            KeyboardId.MODE_DATETIME -> onLoadKeyboard(editorInfo, autoCapsFlags, currentLayoutSet, currentStateHint)
-
-            else -> setAlphabetLayout(autoCapsFlags)
-        }
-    }
-
-    fun onFinishSlidingInput(autoCapsFlags: Int) {
-        if (DEBUG_EVENT) {
-            Log.d(TAG, "onFinishSlidingInput: $debugState")
-        }
-
-        finalizeChord(autoCapsFlags)
-        shiftKeyState.onRelease()
-        symbolKeyState.onRelease()
-    }
+    fun onFinishSlidingInput(autoCapsFlags: Int) { if (DEBUG_EVENT) Log.d(TAG, "onFinishSlidingInput: $debugState"); finalizeChord(autoCapsFlags); shiftKeyState.onRelease(); symbolKeyState.onRelease() }
 
     private fun updateAlphabetShiftState(autoCapsFlags: Int) {
-        // Only return to main layout in alphabet layout
         if(!isAlphabet) return
-
-        // Do not update shift state while shift key is being pressed or chorded
         if(!shiftKeyState.isReleasing || shiftKeyState.isChording) return
-
-        // Shift the layout from base if autocaps is enabled
-        if(autoCapsFlags != Constants.TextUtils.CAP_MODE_OFF) {
-            // Only shift from base layout. If we are in an alt layout, do nothing.
-            if(currentLayout.page == KeyboardLayoutPage.Base) {
-                toggleShift(true, manually = false)
-            }
-
-            return
-        }
-
-        // Otherwise, unshift the layout if it's not locked
-        if(!currentLayout.page.locked) {
-            toggleShift(false)
-            return
-        }
+        if(autoCapsFlags != Constants.TextUtils.CAP_MODE_OFF) { if(currentLayout.page == KeyboardLayoutPage.Base) toggleShift(true, manually = false); return }
+        if(!currentLayout.page.locked) { toggleShift(false); return }
     }
 
-    private fun switchToAlpha(alphaIndex: Int, autoCapsFlags: Int) {
-        preferredAlphabetKind = currentLayoutSet to alphaIndex
-        setAlphabetLayout(autoCapsFlags)
-    }
-
+    private fun switchToAlpha(alphaIndex: Int, autoCapsFlags: Int) { preferredAlphabetKind = currentLayoutSet to alphaIndex; setAlphabetLayout(autoCapsFlags) }
     private fun switchToAltLayout(altLayoutIdx: Int, autoCapsFlags: Int) {
-        val altPage = when(altLayoutIdx) {
-            0 -> KeyboardLayoutPage.Alt0
-            1 -> KeyboardLayoutPage.Alt1
-            2 -> KeyboardLayoutPage.Alt2
-            3 -> KeyboardLayoutPage.Alt3
-            else -> KeyboardLayoutPage.Alt0
-        }
-
-        if(currentLayout.page == altPage) {
-            // Switch back to base
-            toggleShift(false)
-            updateAlphabetShiftState(autoCapsFlags)
-        } else {
-            alphabetShiftState.setShifted(false)
-            setLayout(currentLayout.copy(page = altPage))
-        }
+        val altPage = when(altLayoutIdx) { 0 -> KeyboardLayoutPage.Alt0; 1 -> KeyboardLayoutPage.Alt1; 2 -> KeyboardLayoutPage.Alt2; 3 -> KeyboardLayoutPage.Alt3; else -> KeyboardLayoutPage.Alt0 }
+        if(currentLayout.page == altPage) { toggleShift(false); updateAlphabetShiftState(autoCapsFlags) }
+        else { alphabetShiftState.setShifted(false); setLayout(currentLayout.copy(page = altPage)) }
     }
 
     fun onEvent(event: Event, autoCapsFlags: Int) {
         val code = if (event.isFunctionalKeyEvent) event.mKeyCode else event.mCodePoint
-        if (DEBUG_EVENT) {
-            Log.d(
-                TAG, "onEvent: code=" + Constants.printableCode(code)
-                        + " flags($autoCapsFlags)"
-                        + " " + debugState
-            )
-        }
-
+        if (DEBUG_EVENT) Log.d(TAG, "onEvent: code=" + Constants.printableCode(code) + " flags($autoCapsFlags) " + debugState)
         when(code) {
-            Constants.CODE_TO_NUMBER_LAYOUT -> {
-                if(currentLayout.kind == KeyboardLayoutKind.Number) {
-                    // Return back to symbol layout
-                    prefersNumberLayout = false
-                    setSymbolLayout()
-                } else {
-                    // Set number layout
-                    setNumberLayout()
-                }
-            }
-
-            Constants.CODE_TO_ALT_0_LAYOUT,
-            Constants.CODE_TO_ALT_1_LAYOUT,
-            Constants.CODE_TO_ALT_2_LAYOUT -> {
-                switchToAltLayout(Constants.CODE_TO_ALT_0_LAYOUT - code, autoCapsFlags)
-            }
-
-            Constants.CODE_TO_ALPHA_0_LAYOUT,
-            Constants.CODE_TO_ALPHA_1_LAYOUT,
-            Constants.CODE_TO_ALPHA_2_LAYOUT,
-            Constants.CODE_TO_ALPHA_3_LAYOUT -> {
-                switchToAlpha(Constants.CODE_TO_ALPHA_0_LAYOUT - code, autoCapsFlags)
-            }
+            Constants.CODE_TO_NUMBER_LAYOUT -> { if(currentLayout.kind == KeyboardLayoutKind.Number) { prefersNumberLayout = false; setSymbolLayout() } else setNumberLayout() }
+            Constants.CODE_TO_ALT_0_LAYOUT, Constants.CODE_TO_ALT_1_LAYOUT, Constants.CODE_TO_ALT_2_LAYOUT -> switchToAltLayout(Constants.CODE_TO_ALT_0_LAYOUT - code, autoCapsFlags)
+            Constants.CODE_TO_ALPHA_0_LAYOUT, Constants.CODE_TO_ALPHA_1_LAYOUT, Constants.CODE_TO_ALPHA_2_LAYOUT, Constants.CODE_TO_ALPHA_3_LAYOUT -> switchToAlpha(Constants.CODE_TO_ALPHA_0_LAYOUT - code, autoCapsFlags)
         }
-
         if (Constants.isLetterCode(code)) {
+            if (ctrlKeyState.isPressing || ctrlKeyState.isChording) ctrlKeyState.onRelease()
+            if (altKeyState.isPressing || altKeyState.isChording) altKeyState.onRelease()
             updateAlphabetShiftState(autoCapsFlags)
         }
     }
+}
+
+/* package */ open class ModifierKeyState {
+    protected val TAG = ModifierKeyState::class.java.simpleName
+    protected val DEBUG = false
+    protected val RELEASING = 0; protected val PRESSING = 1; protected val CHORDING = 2
+    protected val mName: String; protected var mState = RELEASING
+    var isLocked = false; protected set
+    constructor(name: String) { mName = name }
+    open fun onPress() { val oldState = mState; mState = PRESSING; if (DEBUG) Log.d(TAG, "$mName.onPress: ${toString(oldState)} > $this") }
+    open fun onRelease() { val oldState = mState; if (!isLocked) { mState = RELEASING }; if (DEBUG) Log.d(TAG, "$mName.onRelease: ${toString(oldState)} > $this") }
+    open fun onOtherKeyPressed() { val oldState = mState; if (oldState == PRESSING) mState = CHORDING; if (DEBUG) Log.d(TAG, "$mName.onOtherKeyPressed: ${toString(oldState)} > $this") }
+    fun isPressing(): Boolean = mState == PRESSING
+    fun isReleasing(): Boolean = mState == RELEASING
+    fun isChording(): Boolean = mState == CHORDING
+    open fun onTapForLock() {}
+    override fun toString(): String = toString(mState)
+    protected fun toString(state: Int): String = when (state) { RELEASING -> "RELEASING"; PRESSING -> "PRESSING"; CHORDING -> "CHORDING"; else -> "UNKNOWN" }
+}
+
+class CtrlKeyState : ModifierKeyState("Ctrl") {
+    private var lastTapTime: Long = 0
+    override fun onTapForLock() {
+        val now = System.currentTimeMillis()
+        if (now - lastTapTime < ViewConfiguration.getDoubleTapTimeout()) { isLocked = !isLocked; if (!isLocked) mState = RELEASING }
+        lastTapTime = now
+    }
+}
+
+class AltKeyState : ModifierKeyState("Alt") {
+    private var lastTapTime: Long = 0
+    override fun onTapForLock() {
+        val now = System.currentTimeMillis()
+        if (now - lastTapTime < ViewConfiguration.getDoubleTapTimeout()) { isLocked = !isLocked; if (!isLocked) mState = RELEASING }
+        lastTapTime = now
+    }
+}
+
+/* package */ class ShiftKeyState(name: String) : ModifierKeyState(name) {
+    private val PRESSING_ON_SHIFTED = 3; private val IGNORING = 4
+    override fun onOtherKeyPressed() {
+        val oldState = mState
+        if (oldState == PRESSING) mState = CHORDING else if (oldState == PRESSING_ON_SHIFTED) mState = IGNORING
+    }
+    fun onPressOnShifted() { mState = PRESSING_ON_SHIFTED }
+    fun isPressingOnShifted(): Boolean = mState == PRESSING_ON_SHIFTED
+    fun isIgnoring(): Boolean = mState == IGNORING
+    override fun toString(state: Int): String = when (state) { PRESSING_ON_SHIFTED -> "PRESSING_ON_SHIFTED"; IGNORING -> "IGNORING"; else -> super.toString(state) }
 }
