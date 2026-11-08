@@ -1,0 +1,36 @@
+name: Build APK
+
+on:
+  workflow_dispatch: # Bu, "Actions" sekmesinden manuel olarak çalıştırmanızı sağlar
+  push:
+    branches: [ "main" ] # Her "main" dalına push yaptığınızda otomatik çalışır
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Depoyu Alt Modüllerle Birlikte Çek
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive' # FUTO Keyboard alt modüller gerektirdiği için bu şart
+
+    - name: JDK 21 Kurulumu
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Gradle Kurulumu
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: gradlew Dosyasını Çalıştırılabilir Yap
+      run: chmod +x gradlew
+
+    - name: APK Derle (Debug)
+      run: ./gradlew assembleUnstableDebug # FUTO'nun debug derleme komutu
+
+    - name: APK'yı Yükle
+      uses: actions/upload-artifact@v4
+      with:
+        name: futo-keyboard-debug-apk
+        path: '**/build/outputs/apk/**/*.apk' # APK'nın oluşacağı tüm olası yolları tarar
