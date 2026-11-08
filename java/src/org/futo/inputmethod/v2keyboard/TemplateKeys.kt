@@ -95,8 +95,8 @@ data class CtrlKey(val attributes: KeyAttributes = KeyAttributes()) : TemplatedK
         get() {
             val state = KeyboardSwitcher.getInstance().getState()
             val style = when {
-                state.isCtrlLocked() -> KeyVisualStyle.Action
-                state.isCtrlActive() -> KeyVisualStyle.StickyOn
+                state?.isCtrlLocked() == true -> KeyVisualStyle.Action
+                state?.isCtrlActive() == true -> KeyVisualStyle.StickyOn
                 else -> KeyVisualStyle.StickyOff
             }
             return BaseKey(
@@ -114,8 +114,8 @@ data class AltModifierKey(val attributes: KeyAttributes = KeyAttributes()) : Tem
         get() {
             val state = KeyboardSwitcher.getInstance().getState()
             val style = when {
-                state.isAltLocked() -> KeyVisualStyle.Action
-                state.isAltActive() -> KeyVisualStyle.StickyOn
+                state?.isAltLocked() == true -> KeyVisualStyle.Action
+                state?.isAltActive() == true -> KeyVisualStyle.StickyOn
                 else -> KeyVisualStyle.StickyOff
             }
             return BaseKey(
