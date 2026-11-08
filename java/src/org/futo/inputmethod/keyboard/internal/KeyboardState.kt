@@ -155,8 +155,8 @@ class KeyboardState(private val switchActions: SwitchActions) {
         when (code) {
             Constants.CODE_SHIFT -> { shiftKeyState.onPress(); toggleShift(manually = true); onShiftTapForShiftLockTimer() }
             Constants.CODE_CAPSLOCK -> { }
-            113 -> { ctrlKeyState.onPress(); ctrlKeyState.onTapForLock(); switchActions.setKeyboard(currentLayout) }
-            57 -> { altKeyState.onPress(); altKeyState.onTapForLock(); switchActions.setKeyboard(currentLayout) }
+            113 -> { ctrlKeyState.onPress(); ctrlKeyState.onTapForLock() }
+            57 -> { altKeyState.onPress(); altKeyState.onTapForLock() }
             Constants.CODE_SWITCH_ALPHA_SYMBOL -> { symbolKeyState.onPress(); if(currentLayout.kind == KeyboardLayoutKind.Symbols || currentLayout.kind == KeyboardLayoutKind.Number) setAlphabetLayout(autoCapsFlags) else setSymbolLayout() }
             else -> { shiftKeyState.onOtherKeyPressed(); symbolKeyState.onOtherKeyPressed(); ctrlKeyState.onOtherKeyPressed(); altKeyState.onOtherKeyPressed() }
         }
@@ -171,8 +171,8 @@ class KeyboardState(private val switchActions: SwitchActions) {
         when (code) {
             Constants.CODE_SHIFT -> { finalizeChord(autoCapsFlags); if(!withSliding) shiftKeyState.onRelease() }
             Constants.CODE_CAPSLOCK -> { lockShift() }
-            113 -> { if(!withSliding) ctrlKeyState.onRelease(); switchActions.setKeyboard(currentLayout) }
-            57 -> { if(!withSliding) altKeyState.onRelease(); switchActions.setKeyboard(currentLayout) }
+            113 -> { if(!withSliding) ctrlKeyState.onRelease() }
+            57 -> { if(!withSliding) altKeyState.onRelease() }
             Constants.CODE_SWITCH_ALPHA_SYMBOL -> { finalizeChord(autoCapsFlags); if(!withSliding) symbolKeyState.onRelease() }
             Constants.CODE_SPACE, Constants.CODE_ENTER -> { if(symbolKeyState.isReleasing() && currentLayout.page == KeyboardLayoutPage.Base && currentLayout.kind == KeyboardLayoutKind.Symbols) setAlphabetLayout(autoCapsFlags) }
             else -> { }
