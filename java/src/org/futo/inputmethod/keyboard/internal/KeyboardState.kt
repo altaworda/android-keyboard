@@ -163,7 +163,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
     }
 
     private fun finalizeChord(autoCapsFlags: Int) {
-        when { shiftKeyState.isChording && shifted -> toggleShift(false); symbolKeyState.isChording && !isAlphabet -> setAlphabetLayout(autoCapsFlags); symbolKeyState.isChording && isAlphabet -> setSymbolLayout() }
+        when { shiftKeyState.isChording() && shifted -> toggleShift(false); symbolKeyState.isChording() && !isAlphabet -> setAlphabetLayout(autoCapsFlags); symbolKeyState.isChording() && isAlphabet -> setSymbolLayout() }
     }
 
     fun onReleaseKey(code: Int, withSliding: Boolean, autoCapsFlags: Int) {
@@ -174,7 +174,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
             113 -> { if(!withSliding) ctrlKeyState.onRelease(); switchActions.setKeyboard(currentLayout) }
             57 -> { if(!withSliding) altKeyState.onRelease(); switchActions.setKeyboard(currentLayout) }
             Constants.CODE_SWITCH_ALPHA_SYMBOL -> { finalizeChord(autoCapsFlags); if(!withSliding) symbolKeyState.onRelease() }
-            Constants.CODE_SPACE, Constants.CODE_ENTER -> { if(symbolKeyState.isReleasing && currentLayout.page == KeyboardLayoutPage.Base && currentLayout.kind == KeyboardLayoutKind.Symbols) setAlphabetLayout(autoCapsFlags) }
+            Constants.CODE_SPACE, Constants.CODE_ENTER -> { if(symbolKeyState.isReleasing() && currentLayout.page == KeyboardLayoutPage.Base && currentLayout.kind == KeyboardLayoutKind.Symbols) setAlphabetLayout(autoCapsFlags) }
             else -> { }
         }
     }
@@ -188,7 +188,7 @@ class KeyboardState(private val switchActions: SwitchActions) {
 
     private fun updateAlphabetShiftState(autoCapsFlags: Int) {
         if(!isAlphabet) return
-        if(!shiftKeyState.isReleasing || shiftKeyState.isChording) return
+        if(!shiftKeyState.isReleasing() || shiftKeyState.isChording()) return
         if(autoCapsFlags != Constants.TextUtils.CAP_MODE_OFF) { if(currentLayout.page == KeyboardLayoutPage.Base) toggleShift(true, manually = false); return }
         if(!currentLayout.page.locked) { toggleShift(false); return }
     }
@@ -209,29 +209,31 @@ class KeyboardState(private val switchActions: SwitchActions) {
             Constants.CODE_TO_ALPHA_0_LAYOUT, Constants.CODE_TO_ALPHA_1_LAYOUT, Constants.CODE_TO_ALPHA_2_LAYOUT, Constants.CODE_TO_ALPHA_3_LAYOUT -> switchToAlpha(Constants.CODE_TO_ALPHA_0_LAYOUT - code, autoCapsFlags)
         }
         if (Constants.isLetterCode(code)) {
-            if (ctrlKeyState.isPressing || ctrlKeyState.isChording) ctrlKeyState.onRelease()
-            if (altKeyState.isPressing || altKeyState.isChording) altKeyState.onRelease()
+            if (ctrlKeyState.isPressing() || ctrlKeyState.isChording()) ctrlKeyState.onRelease()
+            if (altKeyState.isPressing() || altKeyState.isChording()) altKeyState.onRelease()
             updateAlphabetShiftState(autoCapsFlags)
         }
     }
 }
 
-/* package */ open class ModifierKeyState {
+open class ModifierKeyState(protected val mName: String) {
     protected val TAG = ModifierKeyState::class.java.simpleName
     protected val DEBUG = false
     protected val RELEASING = 0; protected val PRESSING = 1; protected val CHORDING = 2
-    protected val mName: String; protected var mState = RELEASING
+    protected var mState = RELEASING
     var isLocked = false; protected set
-    constructor(name: String) { mName = name }
+    
     open fun onPress() { val oldState = mState; mState = PRESSING; if (DEBUG) Log.d(TAG, "$mName.onPress: ${toString(oldState)} > $this") }
     open fun onRelease() { val oldState = mState; if (!isLocked) { mState = RELEASING }; if (DEBUG) Log.d(TAG, "$mName.onRelease: ${toString(oldState)} > $this") }
     open fun onOtherKeyPressed() { val oldState = mState; if (oldState == PRESSING) mState = CHORDING; if (DEBUG) Log.d(TAG, "$mName.onOtherKeyPressed: ${toString(oldState)} > $this") }
+    
     fun isPressing(): Boolean = mState == PRESSING
     fun isReleasing(): Boolean = mState == RELEASING
     fun isChording(): Boolean = mState == CHORDING
     open fun onTapForLock() {}
+    
     override fun toString(): String = toString(mState)
-    protected fun toString(state: Int): String = when (state) { RELEASING -> "RELEASING"; PRESSING -> "PRESSING"; CHORDING -> "CHORDING"; else -> "UNKNOWN" }
+    open fun toString(state: Int): String = when (state) { RELEASING -> "RELEASING"; PRESSING -> "PRESSING"; CHORDING -> "CHORDING"; else -> "UNKNOWN" }
 }
 
 class CtrlKeyState : ModifierKeyState("Ctrl") {
@@ -252,7 +254,7 @@ class AltKeyState : ModifierKeyState("Alt") {
     }
 }
 
-/* package */ class ShiftKeyState(name: String) : ModifierKeyState(name) {
+class ShiftKeyState(name: String) : ModifierKeyState(name) {
     private val PRESSING_ON_SHIFTED = 3; private val IGNORING = 4
     override fun onOtherKeyPressed() {
         val oldState = mState
