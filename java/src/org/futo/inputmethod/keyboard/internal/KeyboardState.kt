@@ -55,7 +55,7 @@ data class KeyboardLayoutElement(val kind: KeyboardLayoutKind, val page: Keyboar
     }
 }
 
-interface SwitchActions { fun setKeyboard(element: KeyboardLayoutElement); fun requestUpdatingShiftState(autoCapsFlags: Int); fun invalidateKeys() }
+interface SwitchActions { fun setKeyboard(element: KeyboardLayoutElement); fun requestUpdatingShiftState(autoCapsFlags: Int) }
 
 internal data class SavedKeyboardState(val isValid: Boolean = false, val layout: KeyboardLayoutElement = KeyboardLayoutElement(KeyboardLayoutKind.Alphabet0, KeyboardLayoutPage.Base), val prefersNumberLayout: Boolean = false, val preferredAlphabetKind: Pair<String, Int> = "" to 0) {
     override fun toString(): String { if (!isValid) return "INVALID"; return "${layout.kind.name}${layout.page.name}" }
@@ -77,6 +77,8 @@ class KeyboardState(private val switchActions: SwitchActions) {
     fun isAltActive(): Boolean = altKeyState.isPressing() || altKeyState.isChording() || altKeyState.isLocked
     fun isCtrlLocked(): Boolean = ctrlKeyState.isLocked
     fun isAltLocked(): Boolean = altKeyState.isLocked
+    fun releaseCtrl() { ctrlKeyState.onRelease() }
+    fun releaseAlt() { altKeyState.onRelease() }
 
     private val alphabetShiftState = AlphabetShiftState()
     private var savedKeyboardState = SavedKeyboardState()
@@ -155,8 +157,8 @@ class KeyboardState(private val switchActions: SwitchActions) {
         when (code) {
             Constants.CODE_SHIFT -> { shiftKeyState.onPress(); toggleShift(manually = true); onShiftTapForShiftLockTimer() }
             Constants.CODE_CAPSLOCK -> { }
-            113 -> { ctrlKeyState.onPress(); ctrlKeyState.onTapForLock(); switchActions.invalidateKeys() }
-            57 -> { altKeyState.onPress(); altKeyState.onTapForLock(); switchActions.invalidateKeys() }
+            113 -> { ctrlKeyState.onPress(); ctrlKeyState.onTapForLock() }
+            57 -> { altKeyState.onPress(); altKeyState.onTapForLock() }
             Constants.CODE_SWITCH_ALPHA_SYMBOL -> { symbolKeyState.onPress(); if(currentLayout.kind == KeyboardLayoutKind.Symbols || currentLayout.kind == KeyboardLayoutKind.Number) setAlphabetLayout(autoCapsFlags) else setSymbolLayout() }
             else -> { shiftKeyState.onOtherKeyPressed(); symbolKeyState.onOtherKeyPressed(); ctrlKeyState.onOtherKeyPressed(); altKeyState.onOtherKeyPressed() }
         }
@@ -171,8 +173,8 @@ class KeyboardState(private val switchActions: SwitchActions) {
         when (code) {
             Constants.CODE_SHIFT -> { finalizeChord(autoCapsFlags); if(!withSliding) shiftKeyState.onRelease() }
             Constants.CODE_CAPSLOCK -> { lockShift() }
-            113 -> { if(!withSliding) ctrlKeyState.onRelease(); switchActions.invalidateKeys() }
-            57 -> { if(!withSliding) altKeyState.onRelease(); switchActions.invalidateKeys() }
+            113 -> { if(!withSliding) ctrlKeyState.onRelease() }
+            57 -> { if(!withSliding) altKeyState.onRelease() }
             Constants.CODE_SWITCH_ALPHA_SYMBOL -> { finalizeChord(autoCapsFlags); if(!withSliding) symbolKeyState.onRelease() }
             Constants.CODE_SPACE, Constants.CODE_ENTER -> { if(symbolKeyState.isReleasing() && currentLayout.page == KeyboardLayoutPage.Base && currentLayout.kind == KeyboardLayoutKind.Symbols) setAlphabetLayout(autoCapsFlags) }
             else -> { }
