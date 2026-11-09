@@ -90,45 +90,51 @@ val TemplateAlt2Key = AltLayoutKey(2)
 // --- YENİ DEĞİŞTİRİCİ TUŞLAR ---
 @Serializable
 @SerialName("ctrl")
-data class CtrlKey(val attributes: KeyAttributes = KeyAttributes()) : TemplatedKey {
-    override val templateKey: Key
-        get() {
-            val state = KeyboardSwitcher.getInstance().getState()
-            val style = when {
-                state?.isCtrlLocked() == true -> KeyVisualStyle.Action
-                state?.isCtrlActive() == true -> KeyVisualStyle.StickyOn
-                else -> KeyVisualStyle.StickyOff
-            }
-            return BaseKey(
-                spec = "Ctrl|0x71",
-                attributes = attributes + FunctionalAttributes + KeyAttributes(style = style)
-            )
+data class CtrlKey(val attributes: KeyAttributes = KeyAttributes(width = KeyWidth.Custom1)) : TemplatedKey {
+    override val templateKey: Key = BaseKey(
+        spec = "Ctrl|0x71",
+        attributes = attributes + FunctionalAttributes + KeyAttributes(style = KeyVisualStyle.StickyOff)
+    )
+    override fun computeData(params: KeyboardParams, row: Row, keyboard: Keyboard, coordinate: KeyCoordinate): ComputedKeyData? {
+        val state = KeyboardSwitcher.getInstance().getState()
+        val style = when {
+            state?.isCtrlLocked() == true -> KeyVisualStyle.Action
+            state?.isCtrlActive() == true -> KeyVisualStyle.StickyOn
+            else -> KeyVisualStyle.StickyOff
         }
+        return BaseKey(
+            spec = "Ctrl|0x71",
+            attributes = attributes + FunctionalAttributes + KeyAttributes(style = style)
+        ).computeData(params, row, keyboard, coordinate)
+    }
 }
 val TemplateCtrlKey = CtrlKey()
 
 @Serializable
 @SerialName("altModifier")
-data class AltModifierKey(val attributes: KeyAttributes = KeyAttributes()) : TemplatedKey {
-    override val templateKey: Key
-        get() {
-            val state = KeyboardSwitcher.getInstance().getState()
-            val style = when {
-                state?.isAltLocked() == true -> KeyVisualStyle.Action
-                state?.isAltActive() == true -> KeyVisualStyle.StickyOn
-                else -> KeyVisualStyle.StickyOff
-            }
-            return BaseKey(
-                spec = "Alt|0x39",
-                attributes = attributes + FunctionalAttributes + KeyAttributes(style = style)
-            )
+data class AltModifierKey(val attributes: KeyAttributes = KeyAttributes(width = KeyWidth.Custom1)) : TemplatedKey {
+    override val templateKey: Key = BaseKey(
+        spec = "Alt|0x39",
+        attributes = attributes + FunctionalAttributes + KeyAttributes(style = KeyVisualStyle.StickyOff)
+    )
+    override fun computeData(params: KeyboardParams, row: Row, keyboard: Keyboard, coordinate: KeyCoordinate): ComputedKeyData? {
+        val state = KeyboardSwitcher.getInstance().getState()
+        val style = when {
+            state?.isAltLocked() == true -> KeyVisualStyle.Action
+            state?.isAltActive() == true -> KeyVisualStyle.StickyOn
+            else -> KeyVisualStyle.StickyOff
         }
+        return BaseKey(
+            spec = "Alt|0x39",
+            attributes = attributes + FunctionalAttributes + KeyAttributes(style = style)
+        ).computeData(params, row, keyboard, coordinate)
+    }
 }
 val TemplateAltKey = AltModifierKey()
 
 @Serializable
 @SerialName("tab")
-data class TabKey(val attributes: KeyAttributes = KeyAttributes()) : TemplatedKey {
+data class TabKey(val attributes: KeyAttributes = KeyAttributes(width = KeyWidth.Custom1)) : TemplatedKey {
     override val templateKey: Key = BaseKey(
         spec = "Tab|0x3d",
         attributes = attributes + FunctionalAttributes
