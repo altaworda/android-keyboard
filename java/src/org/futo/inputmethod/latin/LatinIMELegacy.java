@@ -600,7 +600,17 @@ public class LatinIMELegacy implements KeyboardActionListener,
     public void onCodeInput(final int codePoint, final int x, final int y,
             final boolean isKeyRepeat) {
         
-        // --- YENİ: CTRL / ALT KOMBİNASYON KONTROLÜ ---
+        // --- DEĞİŞTİRİCİ TUŞ KODLARINI YAKALA (q/9/= sorununu çözer) ---
+        if (codePoint == 113 || codePoint == 57 || codePoint == 61) {
+            if (mKeyboardSwitcher.getState() != null && 
+                (mKeyboardSwitcher.getState().isCtrlActive() || mKeyboardSwitcher.getState().isAltActive())) {
+                // Aşağıdaki kombinasyon mantığına düş
+            } else {
+                return; // Değiştirici tuş tek başına basıldı, hiçbir şey yazma
+            }
+        }
+        
+        // --- CTRL / ALT KOMBİNASYON KONTROLÜ ---
         if (mKeyboardSwitcher.getState() != null && 
             (mKeyboardSwitcher.getState().isCtrlActive() || mKeyboardSwitcher.getState().isAltActive())) {
             int metaState = 0;
@@ -620,6 +630,14 @@ public class LatinIMELegacy implements KeyboardActionListener,
                     KeyEvent upEvent = new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0, metaState);
                     ic.sendKeyEvent(downEvent);
                     ic.sendKeyEvent(upEvent);
+                    
+                    // KOMBİNASYON SONRASI CTRL/ALT'I SERBEST BIRAK
+                    if (!mKeyboardSwitcher.getState().isCtrlLocked()) {
+                        mKeyboardSwitcher.getState().releaseCtrl();
+                    }
+                    if (!mKeyboardSwitcher.getState().isAltLocked()) {
+                        mKeyboardSwitcher.getState().releaseAlt();
+                    }
                     return; // Normal harf girişini engelle
                 }
             }
@@ -634,7 +652,7 @@ public class LatinIMELegacy implements KeyboardActionListener,
         onEvent(event);
     }
 
-    // YENİ: Karakteri KeyEvent koduna çeviren genişletilmiş yardımcı metot
+    // Karakteri KeyEvent koduna çeviren genişletilmiş yardımcı metot
     private int charToKeyCode(int codePoint) {
         if (codePoint >= 'a' && codePoint <= 'z') {
             return KeyEvent.KEYCODE_A + (codePoint - 'a');
