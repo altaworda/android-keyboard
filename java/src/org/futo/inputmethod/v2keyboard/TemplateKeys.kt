@@ -4,7 +4,6 @@ import android.view.inputmethod.EditorInfo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.futo.inputmethod.keyboard.KeyboardId
-import org.futo.inputmethod.keyboard.KeyboardSwitcher
 import org.futo.inputmethod.keyboard.internal.KeyboardIconsSet
 import org.futo.inputmethod.keyboard.internal.KeyboardLayoutKind
 import org.futo.inputmethod.keyboard.internal.KeyboardParams
@@ -95,18 +94,6 @@ data class CtrlKey(val attributes: KeyAttributes = KeyAttributes(width = KeyWidt
         spec = "Ctrl|0x71",
         attributes = attributes + FunctionalAttributes + KeyAttributes(style = KeyVisualStyle.StickyOff)
     )
-    override fun computeData(params: KeyboardParams, row: Row, keyboard: Keyboard, coordinate: KeyCoordinate): ComputedKeyData? {
-        val state = KeyboardSwitcher.getInstance().getState()
-        val style = when {
-            state?.isCtrlLocked() == true -> KeyVisualStyle.Action
-            state?.isCtrlActive() == true -> KeyVisualStyle.StickyOn
-            else -> KeyVisualStyle.StickyOff
-        }
-        return BaseKey(
-            spec = "Ctrl|0x71",
-            attributes = attributes + FunctionalAttributes + KeyAttributes(style = style)
-        ).computeData(params, row, keyboard, coordinate)
-    }
 }
 val TemplateCtrlKey = CtrlKey()
 
@@ -117,18 +104,6 @@ data class AltModifierKey(val attributes: KeyAttributes = KeyAttributes(width = 
         spec = "Alt|0x39",
         attributes = attributes + FunctionalAttributes + KeyAttributes(style = KeyVisualStyle.StickyOff)
     )
-    override fun computeData(params: KeyboardParams, row: Row, keyboard: Keyboard, coordinate: KeyCoordinate): ComputedKeyData? {
-        val state = KeyboardSwitcher.getInstance().getState()
-        val style = when {
-            state?.isAltLocked() == true -> KeyVisualStyle.Action
-            state?.isAltActive() == true -> KeyVisualStyle.StickyOn
-            else -> KeyVisualStyle.StickyOff
-        }
-        return BaseKey(
-            spec = "Alt|0x39",
-            attributes = attributes + FunctionalAttributes + KeyAttributes(style = style)
-        ).computeData(params, row, keyboard, coordinate)
-    }
 }
 val TemplateAltKey = AltModifierKey()
 
