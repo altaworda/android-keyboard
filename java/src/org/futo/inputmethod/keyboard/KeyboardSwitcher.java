@@ -100,11 +100,16 @@ public final class KeyboardSwitcher implements SwitchActions {
         mIsHardwareAcceleratedDrawingEnabled = true;
     }
 
-    // --- YENİ EKLENEN METOT ---
     public KeyboardState getState() {
         return mState;
     }
-    // --- YENİ EKLENEN METOT BİTTİ ---
+
+    @Override
+    public void invalidateKeys() {
+        if (mKeyboardView != null) {
+            mKeyboardView.invalidateAllKeys();
+        }
+    }
 
     public void updateKeyboardTheme(@NonNull Context displayContext) {
         final boolean themeUpdated = updateKeyboardThemeAndContextThemeWrapper(
