@@ -104,13 +104,6 @@ public final class KeyboardSwitcher implements SwitchActions {
         return mState;
     }
 
-    @Override
-    public void invalidateKeys() {
-        if (mKeyboardView != null) {
-            mKeyboardView.invalidateAllKeys();
-        }
-    }
-
     public void updateKeyboardTheme(@NonNull Context displayContext) {
         final boolean themeUpdated = updateKeyboardThemeAndContextThemeWrapper(
                 displayContext, KeyboardTheme.getKeyboardTheme(displayContext));
