@@ -634,7 +634,7 @@ public class LatinIMELegacy implements KeyboardActionListener,
         onEvent(event);
     }
 
-    // YENİ: Karakteri KeyEvent koduna çeviren yardımcı metot
+    // YENİ: Karakteri KeyEvent koduna çeviren genişletilmiş yardımcı metot
     private int charToKeyCode(int codePoint) {
         if (codePoint >= 'a' && codePoint <= 'z') {
             return KeyEvent.KEYCODE_A + (codePoint - 'a');
@@ -642,14 +642,44 @@ public class LatinIMELegacy implements KeyboardActionListener,
             return KeyEvent.KEYCODE_A + (codePoint - 'A');
         } else if (codePoint >= '0' && codePoint <= '9') {
             return KeyEvent.KEYCODE_0 + (codePoint - '0');
-        } else if (codePoint == ' ') {
-            return KeyEvent.KEYCODE_SPACE;
-        } else if (codePoint == '.') {
-            return KeyEvent.KEYCODE_PERIOD;
-        } else if (codePoint == ',') {
-            return KeyEvent.KEYCODE_COMMA;
         }
-        return KeyEvent.KEYCODE_UNKNOWN;
+        
+        switch (codePoint) {
+            case ' ': return KeyEvent.KEYCODE_SPACE;
+            case '\n': return KeyEvent.KEYCODE_ENTER;
+            case '\t': return KeyEvent.KEYCODE_TAB;
+            case '.': return KeyEvent.KEYCODE_PERIOD;
+            case ',': return KeyEvent.KEYCODE_COMMA;
+            case ';': return KeyEvent.KEYCODE_SEMICOLON;
+            case ':': return KeyEvent.KEYCODE_SEMICOLON;
+            case '\'': return KeyEvent.KEYCODE_APOSTROPHE;
+            case '"': return KeyEvent.KEYCODE_APOSTROPHE;
+            case '/': return KeyEvent.KEYCODE_SLASH;
+            case '?': return KeyEvent.KEYCODE_SLASH;
+            case '\\': return KeyEvent.KEYCODE_BACKSLASH;
+            case '|': return KeyEvent.KEYCODE_BACKSLASH;
+            case '-': return KeyEvent.KEYCODE_MINUS;
+            case '_': return KeyEvent.KEYCODE_MINUS;
+            case '=': return KeyEvent.KEYCODE_EQUALS;
+            case '+': return KeyEvent.KEYCODE_EQUALS;
+            case '[': return KeyEvent.KEYCODE_LEFT_BRACKET;
+            case '{': return KeyEvent.KEYCODE_LEFT_BRACKET;
+            case ']': return KeyEvent.KEYCODE_RIGHT_BRACKET;
+            case '}': return KeyEvent.KEYCODE_RIGHT_BRACKET;
+            case '`': return KeyEvent.KEYCODE_GRAVE;
+            case '~': return KeyEvent.KEYCODE_GRAVE;
+            case '!': return KeyEvent.KEYCODE_1;
+            case '@': return KeyEvent.KEYCODE_2;
+            case '#': return KeyEvent.KEYCODE_3;
+            case '$': return KeyEvent.KEYCODE_4;
+            case '%': return KeyEvent.KEYCODE_5;
+            case '^': return KeyEvent.KEYCODE_6;
+            case '&': return KeyEvent.KEYCODE_7;
+            case '*': return KeyEvent.KEYCODE_8;
+            case '(': return KeyEvent.KEYCODE_9;
+            case ')': return KeyEvent.KEYCODE_0;
+            default: return KeyEvent.KEYCODE_UNKNOWN;
+        }
     }
 
     public void onEvent(@Nonnull final Event event) {
