@@ -4,6 +4,7 @@ import android.view.inputmethod.EditorInfo
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.futo.inputmethod.keyboard.KeyboardId
+import org.futo.inputmethod.keyboard.KeyboardSwitcher
 import org.futo.inputmethod.keyboard.internal.KeyboardIconsSet
 import org.futo.inputmethod.keyboard.internal.KeyboardLayoutKind
 import org.futo.inputmethod.keyboard.internal.KeyboardParams
@@ -86,7 +87,7 @@ val TemplateAlt0Key = AltLayoutKey(0)
 val TemplateAlt1Key = AltLayoutKey(1)
 val TemplateAlt2Key = AltLayoutKey(2)
 
-// --- YENİ DEĞİŞTİRİCİ TUŞLAR ---
+// --- YENİ DEĞİŞTİRİCİ TUŞLAR (Güvenli görsel geri bildirim ile) ---
 @Serializable
 @SerialName("ctrl")
 data class CtrlKey(val attributes: KeyAttributes = KeyAttributes(width = KeyWidth.Custom1)) : TemplatedKey {
@@ -94,6 +95,18 @@ data class CtrlKey(val attributes: KeyAttributes = KeyAttributes(width = KeyWidt
         spec = "Ctrl|0x71",
         attributes = attributes + FunctionalAttributes + KeyAttributes(style = KeyVisualStyle.StickyOff)
     )
+    override fun computeData(params: KeyboardParams, row: Row, keyboard: Keyboard, coordinate: KeyCoordinate): ComputedKeyData? {
+        val base = BaseKey(spec = "Ctrl|0x71", attributes = attributes + FunctionalAttributes).computeData(params, row, keyboard, coordinate) ?: return null
+        return try {
+            val state = KeyboardSwitcher.getInstance().getState() ?: return base
+            val style = when {
+                state.isCtrlLocked() -> KeyVisualStyle.Action
+                state.isCtrlActive() -> KeyVisualStyle.StickyOn
+                else -> KeyVisualStyle.StickyOff
+            }
+            base.copy(style = style)
+        } catch (e: Exception) { base }
+    }
 }
 val TemplateCtrlKey = CtrlKey()
 
@@ -104,6 +117,18 @@ data class AltModifierKey(val attributes: KeyAttributes = KeyAttributes(width = 
         spec = "Alt|0x39",
         attributes = attributes + FunctionalAttributes + KeyAttributes(style = KeyVisualStyle.StickyOff)
     )
+    override fun computeData(params: KeyboardParams, row: Row, keyboard: Keyboard, coordinate: KeyCoordinate): ComputedKeyData? {
+        val base = BaseKey(spec = "Alt|0x39", attributes = attributes + FunctionalAttributes).computeData(params, row, keyboard, coordinate) ?: return null
+        return try {
+            val state = KeyboardSwitcher.getInstance().getState() ?: return base
+            val style = when {
+                state.isAltLocked() -> KeyVisualStyle.Action
+                state.isAltActive() -> KeyVisualStyle.StickyOn
+                else -> KeyVisualStyle.StickyOff
+            }
+            base.copy(style = style)
+        } catch (e: Exception) { base }
+    }
 }
 val TemplateAltKey = AltModifierKey()
 
